@@ -1,0 +1,114 @@
+﻿@page "/Login"
+@layout LoginLayout
+@inject NavigationManager NavigationManager
+@inject CustomAuthenticationStateProvider Auth
+@inject IMostrarMensajes mostrarMensajes
+@inject IApi apiService
+@using Models
+@using AppRaypal_Blazor.Helpers;
+@using System.Text.Json
+
+
+<div class="limiter">
+		<div class="container-login100">
+			<div class="wrap-login100">
+				<div class="login100-form validate-form">
+					<span class="login100-form-title p-b-34">
+						Acceso Al Sistema
+					</span>
+					
+					<div class="wrap-input100 rs1-wrap-input100 validate-input m-b-20" data-validate="Escribe tu Usuario">
+						<input id="first-name" class="input100" type="text" name="username" placeholder="Usuario" @bind="UserName">
+						<span class="focus-input100"></span>
+					</div>
+					<div class="wrap-input100 rs2-wrap-input100 validate-input m-b-20" data-validate="Escribe tu Contraseña">
+						<input class="input100" type="password" name="pass" placeholder="Contraseña" @bind="Password">
+						<span class="focus-input100"></span>
+					</div>
+					
+					<div class="container-login100-form-btn">
+						<button class="login100-form-btn" @onclick="(()=>MetodoLogin())">
+							Login
+						</button>
+					</div>
+
+					<div class="w-full text-center p-t-27 p-b-239">
+						 
+					</div>
+
+					<div class="w-full text-center">
+						 
+					</div>
+				</div>
+
+				<div class="login100-more" style="background-image: url(https://images.unsplash.com/photo-1493238792000-8113da705763?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxleHBsb3JlLWZlZWR8Mnx8fGVufDB8fHx8&w=1000&q=80);"></div>
+			</div>
+		</div>
+	</div>
+
+
+
+@code {
+
+	#region	Propiedades
+     public bool LoadingDialogOpen { get; set; }
+	public string UserName { get; set; }
+	public string Password { get; set; }
+    bool onTask = false;
+	#endregion
+
+
+	  async Task MetodoLogin()
+    {
+        if (onTask)
+            return;
+
+        onTask = true;
+
+        try
+        {
+            if (!String.IsNullOrEmpty(UserName) && !String.IsNullOrEmpty(Password))
+            {
+                LoadingDialogOpen = true;
+
+                clsUsuarios usuario = new clsUsuarios { cedula = UserName, pass = clsUtils.encodePassword(Password), tipoConsulta = 0 };
+
+                clsRespuesta respuesta = await apiService.Post<clsUsuarios>("User", "Login", usuario, false, false);
+
+                if (!respuesta.resultado)
+                {
+                    LoadingDialogOpen = false;
+                    await mostrarMensajes.MostrarMensajeError(respuesta.mensaje);
+                }
+                else
+                {
+
+                    clsUsuarios empleado = JsonSerializer.Deserialize<clsUsuarios>(respuesta.objeto.ToString(), clsUtils.OpcionesPorDefectoJSON);
+
+                    Program.miUsuarioLogueado = empleado;
+
+                    LoadingDialogOpen = false;
+
+                    await Auth.SetTokenAsync(respuesta.objeto.ToString(), DateTime.Now.AddMinutes(500).ToString());
+                    AuthenticationState data = await Auth.GetAuthenticationStateAsync();
+                    StateHasChanged();
+                    NavigationManager.NavigateTo("");
+                }
+            }
+            else
+            {
+                LoadingDialogOpen = false;
+                await mostrarMensajes.MostrarMensajeError("Debe escribir el Usuario y la Contraseña.");
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingDialogOpen = false;
+            Console.WriteLine(ex.ToString());
+        }
+
+
+        onTask = false;
+    }
+
+}

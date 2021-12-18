@@ -1,0 +1,28 @@
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager NavigationManager
+
+<CascadingAuthenticationState>
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        @*<RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />*@
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                <!--cuando no este autorizado redirecciona a login-->
+                <LoginPage />
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div style="width:100%; text-align:center; margin: auto;">
+                <h2 style="font-size: 24px; font-weight: bold; color: #66BE84;">Error, No se puede encontrar el Recurso Solicitado :C</h2>
+                <div class="text-center">
+                    <img src="Images/pineapple.png" style="width:80%; max-width: 400px;" />
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
+</CascadingAuthenticationState>
+
+ 
